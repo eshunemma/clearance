@@ -2,9 +2,9 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
-import { Check, CircleX, SquareMenu } from "lucide-react";
+import { CircleX, SquareMenu } from "lucide-react";
 import axios from "axios";
-import { getToken } from "../utils/helperFunctions";
+import { baseURL, getToken } from "../utils/helperFunctions";
 import ModalComponent from "../components/ModalComponent";
 import AddDept from "./AddDept";
 
@@ -21,20 +21,16 @@ const ManageDepartment = () => {
   };
 
   const navigate = useNavigate();
-
-  const [authenticated, setAuthenticated] = useState(
-    sessionStorage.getItem("authenticated") || false
-  );
   const [departmentsData, setDeptData] = useState([]);
 
   useEffect(() => {
     const loginUser = sessionStorage.getItem("authenticated");
-    if (loginUser) {
-      setAuthenticated(loginUser);
+    if (!loginUser) {
+      return navigate("/login");
     }
     const getData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8888/departments`, {
+        const response = await axios.get(`${baseURL}/departments`, {
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
@@ -42,7 +38,6 @@ const ManageDepartment = () => {
         setDeptData(response.data);
       } catch (error) {
         window.alert("Token Expired");
-        setAuthenticated(false);
         navigate("/");
       }
       // if (response.status === 403) navigate("/");
@@ -50,20 +45,13 @@ const ManageDepartment = () => {
     getData();
   }, []);
 
-  if (!authenticated) {
-    navigate("/");
-  }
-
   const handleDelete = async (e) => {
     try {
-      await axios.delete(
-        `http://localhost:8888/departments/${Number(e?.target?.id)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        }
-      );
+      await axios.delete(`${baseURL}/departments/${Number(e?.target?.id)}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       setDeptData(departmentsData.filter((data) => data.id !== e?.target?.id));
     } catch (error) {
       window.alert("Something went wrong");

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { decodedToken, setToken } from "../utils/helperFunctions";
+import { baseURL, decodedToken, setToken } from "../utils/helperFunctions";
 
 const StudentLogin = () => {
   const [matricNumber, setMatricNumber] = useState("");
@@ -13,18 +13,22 @@ const StudentLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://localhost:8888/users/login", {
+      const response = await axios.post(`${baseURL}/users/login`, {
         identifier: matricNumber,
         password,
       });
       console.log(response, "response");
       sessionStorage.setItem("authenticated", true);
       setToken(response?.data);
-      localStorage.setItem(
-        "authUser",
-        JSON.stringify(decodedToken(response.data))
-      );
-      navigate("/");
+      const decode = decodedToken(response.data);
+      localStorage.setItem("authUser", JSON.stringify(decode));
+      if (decode?.roleName === "admin") {
+        navigate("/manage-users");
+      } else if (decode?.roleName === "department_staff") {
+        navigate("/manage-dept");
+      } else {
+        navigate("/login");
+      }
     } catch (error) {
       // Handle the error
       console.error("Error:", error);

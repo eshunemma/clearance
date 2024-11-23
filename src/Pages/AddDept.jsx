@@ -1,8 +1,7 @@
 // src/components/StudentLogin.js
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { getToken } from "../utils/helperFunctions";
+import { baseURL, getToken } from "../utils/helperFunctions";
 
 const AddDept = ({ closeModal }) => {
   const [name, setName] = useState("");
@@ -11,8 +10,8 @@ const AddDept = ({ closeModal }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        "http://localhost:8888/departments",
+      await axios.post(
+        `${baseURL}/departments`,
         { name },
         {
           headers: {
@@ -25,7 +24,7 @@ const AddDept = ({ closeModal }) => {
     } catch (error) {
       // Handle the error
       console.error("Error:", error);
-      setErrorMessage("Login failed. Please check your credentials.");
+      setErrorMessage("Check your credentials");
     }
   };
 

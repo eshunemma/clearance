@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { baseURL } from "../utils/helperFunctions";
 
 const SignUp = () => {
   const signUpInput = [
@@ -67,9 +68,8 @@ const SignUp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(val);
     try {
-      const response = await axios.post("http://localhost:8888/users", val);
+      const response = await axios.post(`${baseURL}/users`, val);
       console.log(response);
 
       navigate("/login");
@@ -83,8 +83,8 @@ const SignUp = () => {
       <div className="bg-white p-8 rounded-lg shadow-lg w-[31.25rem]">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
         <form onSubmit={handleSubmit}>
-          {signUpInput.map(({ name, type, placeholder, label }) => (
-            <div className="mb-4">
+          {signUpInput.map(({ name, type, placeholder, label }, index) => (
+            <div className="mb-4" key={index}>
               <label>{label}</label>
               <input
                 type={type}

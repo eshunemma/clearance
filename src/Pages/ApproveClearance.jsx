@@ -2,30 +2,17 @@
 import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
-
-import { Check, SquareMenu } from "lucide-react";
+import { SquareMenu } from "lucide-react";
 import axios from "axios";
-import { getToken } from "../utils/helperFunctions";
+import {
+  baseURL,
+  getStatusClass,
+  getToken,
+  replaceObjectInArray,
+} from "../utils/helperFunctions";
 
 const ApproveClearance = () => {
-  const Clearance = [
-    "College Bursar",
-    "College Registrar",
-    "Hall of Residence",
-    "University Library",
-    "Student Guild",
-    "Police Post",
-    "Games Union",
-    "University Hospital",
-    "Dean of Students",
-    "University Bursar",
-  ];
-
   const navigate = useNavigate();
-
-  const [authenticated, setAuthenticated] = useState(
-    sessionStorage.getItem("authenticated") || false
-  );
 
   const [approvalsData, setapprovalsData] = useState([]);
 
@@ -33,20 +20,20 @@ const ApproveClearance = () => {
 
   useEffect(() => {
     const loginUser = sessionStorage.getItem("authenticated");
-    if (loginUser) {
-      setAuthenticated(loginUser);
+    if (!loginUser) {
+      return navigate("/login");
     }
     const getData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8888/clearance/${authUser.DepartmentId}`,
+          `${baseURL}/approvals/department/${authUser.DepartmentId}`,
           {
             headers: {
               Authorization: `Bearer ${getToken()}`,
             },
           }
         );
-        console.log(response);
+        setapprovalsData(response.data);
       } catch (error) {
         console.log(error);
       }
@@ -54,43 +41,40 @@ const ApproveClearance = () => {
     getData();
   }, []);
 
-  if (!authenticated) {
-    window.alert("Not Authenticated");
-    navigate("/");
-  }
+  const approveClearance = async (id, status) => {
+    try {
+      const response = await axios.put(
+        `${baseURL}/approvals/${id}`,
+        {
+          status: `${status}`,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+        }
+      );
+      setapprovalsData(
+        replaceObjectInArray(
+          approvalsData,
+          response?.data?.id,
+          response?.data?.status
+        )
+      );
+      // setapprovalsData();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-  const data = [
-    {
-      regNo: "09/U/10524/EVE",
-      studentNo: "209013165",
-      name: "BAKASHABA Julius",
-      program: "BRA",
-    },
-    {
-      regNo: "09/U/10531/EVE",
-      studentNo: "209013174",
-      name: "EKASHION Everlyn",
-      program: "BIT",
-    },
-    {
-      regNo: "09/U/10544/EVE",
-      studentNo: "209013190",
-      name: "KAPKWEYEK Kisajoram",
-      program: "CSC",
-    },
-    {
-      regNo: "09/U/10545/EVE",
-      studentNo: "209013191",
-      name: "KARUNGI Edina",
-      program: "BIT",
-    },
-    {
-      regNo: "09/U/16510/EVE",
-      studentNo: "209013079",
-      name: "NAKAWOOYA Joyce",
-      program: "BIT",
-    },
-  ];
+  const onClickApprove = (e) => {
+    approveClearance(e.target.id, "approved");
+  };
+
+  const onClickDisapprove = (e) => {
+    approveClearance(e.target.id, "rejected");
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 mx-[10rem]">
       <NavBar />
@@ -113,26 +97,40 @@ const ApproveClearance = () => {
             <table className="min-w-full border-collapse">
               <thead>
                 <tr className="bg-blue-600 text-white text-left">
-                  <th className="py-2 px-4 border-b">Reg No</th>
                   <th className="py-2 px-4 border-b">Student No</th>
                   <th className="py-2 px-4 border-b">Student Name</th>
-                  <th className="py-2 px-4 border-b">Program</th>
+                  <th className="py-2 px-4 border-b">Status</th>
                   <th className="py-2 px-4 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map((student, index) => (
+                {approvalsData.map((student, index) => (
                   <tr key={index} className="odd:bg-gray-100 even:bg-white">
-                    <td className="py-2 px-4 border-b">{student.regNo}</td>
-                    <td className="py-2 px-4 border-b">{student.studentNo}</td>
-                    <td className="py-2 px-4 border-b">{student.name}</td>
-                    <td className="py-2 px-4 border-b">{student.program}</td>
+                    <td className="py-2 px-4 border-b">{student?.user?.id}</td>
                     <td className="py-2 px-4 border-b">
-                      <button className="text-blue-600 font-semibold hover:underline">
+                      {student.user.firstName} {student?.user?.lastName}
+                    </td>
+                    <td
+                      className={`py-2 px-4 border-b ${getStatusClass(
+                        student?.status
+                      )}`}
+                    >
+                      {student?.status}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      <button
+                        id={student?.id}
+                        className="text-blue-600 font-semibold hover:underline"
+                        onClick={onClickApprove}
+                      >
                         Approve
                       </button>
                       {" | "}
-                      <button className="text-blue-600 font-semibold hover:underline">
+                      <button
+                        id={student?.id}
+                        className="text-blue-600 font-semibold hover:underline"
+                        onClick={onClickDisapprove}
+                      >
                         Reject
                       </button>
                     </td>

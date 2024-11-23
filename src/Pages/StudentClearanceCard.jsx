@@ -3,56 +3,47 @@ import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
 
-import { Check, SquareMenu } from "lucide-react";
+import { Ban, Check, Loader, SquareMenu } from "lucide-react";
 import axios from "axios";
-import { getToken } from "../utils/helperFunctions";
-import TopNav from "../components/TopNav";
+import { baseURL, getToken } from "../utils/helperFunctions";
 
 const StudentClearanceCard = () => {
-  const Clearance = [
-    "College Bursar",
-    "College Registrar",
-    "Hall of Residence",
-    "University Library",
-    "Student Guild",
-    "Police Post",
-    "Games Union",
-    "University Hospital",
-    "Dean of Students",
-    "University Bursar",
-  ];
-
   const navigate = useNavigate();
 
-  const [authenticated, setAuthenticated] = useState(
-    sessionStorage.getItem("authenticated") || false
-  );
+  const loginUser = sessionStorage.getItem("authenticated");
+
   const [userDetials, setUserDetails] = useState({});
+  const [clearanceData, setclearanceData] = useState([]);
 
   const authUser = JSON.parse(localStorage.getItem("authUser"));
-
   useEffect(() => {
-    const loginUser = sessionStorage.getItem("authenticated");
-    if (loginUser) {
-      setAuthenticated(loginUser);
+    if (!loginUser) {
+      return navigate("/login");
     }
     const getData = async () => {
+      const response = await axios.get(`${baseURL}/users/${authUser?.id}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      setUserDetails(response?.data?.dataValues);
+    };
+    getData();
+
+    const loadClearanceData = async () => {
       const response = await axios.get(
-        `http://localhost:8888/users/${authUser?.id}`,
+        `${baseURL}/approvals/user/${authUser?.id}`,
         {
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
         }
       );
-      setUserDetails(response.data);
+      setclearanceData(response?.data);
     };
-    getData();
+    if (authUser?.roleName !== "admin" || "department_staff")
+      loadClearanceData();
   }, []);
-
-  if (!authenticated) {
-    navigate("/");
-  }
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-100 mx-[10rem]">
@@ -144,13 +135,19 @@ const StudentClearanceCard = () => {
                 <h1 className="flex flex-[0.6] ">Clearance Unit</h1>
                 <h1>Status</h1>
               </div>
-              {Clearance.map((data, index) => (
+              {clearanceData.map((data, index) => (
                 <div
                   className="flex border-b-2 border-[#989ca3] pb-3"
                   key={index}
                 >
-                  <h1 className="flex flex-[0.6]">{data}</h1>
-                  <Check className={"text-green-700 size-6"} />
+                  <h1 className="flex flex-[0.6]">{data?.departmentName}</h1>
+                  {data?.status === "approved" ? (
+                    <Check className={"text-green-700 size-6"} />
+                  ) : data?.status === "rejected" ? (
+                    <Ban className={"text-red-600 size-6"} />
+                  ) : (
+                    <Loader className={"size-6"} />
+                  )}
                 </div>
               ))}
             </div>

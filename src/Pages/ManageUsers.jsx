@@ -3,55 +3,45 @@ import React, { useEffect, useState } from "react";
 import NavBar from "../components/NavBar";
 import { useNavigate } from "react-router-dom";
 
-import { Check, SquareMenu } from "lucide-react";
+import { SquareMenu } from "lucide-react";
 import axios from "axios";
-import { getToken } from "../utils/helperFunctions";
+import { baseURL, getToken } from "../utils/helperFunctions";
 
 const ManageUsers = () => {
   const navigate = useNavigate();
 
-  const [authenticated, setAuthenticated] = useState(
-    sessionStorage.getItem("authenticated") || false
-  );
   const [userDetials, setUserDetails] = useState([]);
+  const loginUser = sessionStorage.getItem("authenticated");
 
   useEffect(() => {
-    const loginUser = sessionStorage.getItem("authenticated");
-    if (loginUser) {
-      setAuthenticated(loginUser);
+    if (loginUser === "null") {
+      return navigate("/login");
     }
     const getData = async () => {
       try {
-        const response = await axios.get(`http://localhost:8888/users`, {
+        const response = await axios.get(`${baseURL}/users`, {
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
         });
+        console.log(response.data, "dataaaa");
         setUserDetails(response.data);
       } catch (error) {
+        console.log(error);
         window.alert("Token Expired");
-        setAuthenticated(false);
-        navigate("/");
+        navigate("/login");
       }
     };
     getData();
   }, []);
 
-  if (!authenticated) {
-    window.alert("Not Authenticated");
-    navigate("/");
-  }
-
   const handleDelete = async (e) => {
     try {
-      await axios.delete(
-        `http://localhost:8888/users/${Number(e?.target?.id)}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getToken()}`,
-          },
-        }
-      );
+      await axios.delete(`${baseURL}/users/${Number(e?.target?.id)}`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
       setUserDetails(userDetials.filter((data) => data.id !== e?.target?.id));
     } catch (error) {
       window.alert("Something went wrong");
